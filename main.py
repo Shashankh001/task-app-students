@@ -20,14 +20,15 @@ from kivymd.uix.dialog import MDDialog
 from mega import Mega
 from threading import Thread
 from kivy.clock import Clock
+from tkinter import filedialog
+import tkinter
 
 mega = Mega()
 mega._login_user('shashankhgedda@gmail.com','Shashankh*12@mydad')
 
 kv_string = """
 #:kivy 2.1.0
-
-
+#:import toast kivymd.toast.toast
 
 WindowManager:
     Menu:
@@ -36,7 +37,6 @@ WindowManager:
         name: 'hw'
     Notice: 
         name: 'notice'
-
 
 
 <Menu>:
@@ -58,6 +58,13 @@ WindowManager:
         size_hint_x: .2
         pos_hint: {'center_x': 0.5, 'center_y':0.5}
         on_release: root.homework()
+
+    MDFillRoundFlatButton:
+        text: "Downloads"
+        font_size: 18
+        size_hint_x: .2
+        pos_hint: {'center_x': 0.5, 'center_y':0.3}
+        on_release: root.downloads()
 
     Label:
         text: 'Version 1.0.0'
@@ -95,6 +102,50 @@ class Menu(Screen):
 
     def homework(self):
         TaskAppApp.build.kv.current = 'hw'
+
+    def downloads(self):
+        Menu.downloads.dialog = MDDialog(
+            title = 'Choose an option',
+            buttons=[
+                    MDRaisedButton(
+                        text="Change Downloads Folder",
+                        on_release= self.change_dest
+                    ),
+                    MDRaisedButton(
+                        text="Open Downloads Folder",
+                        on_release= self.open_dest
+                    )
+                ],
+        )
+
+        Menu.downloads.dialog.open()
+
+    def change_dest(self, dt):
+        root = tkinter.Tk()
+        root.withdraw()
+
+        destination = filedialog.askdirectory(parent=root,initialdir="/",title='Please select a directory')
+
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+            f.close()
+
+        data[0]["downloads_folder"] = destination.replace("/","\\")
+
+        with open('appinfo.json','w') as f:
+            json.dump(data, f, indent=4)
+            f.close()
+
+        Menu.downloads.dialog.dismiss()
+
+    def open_dest(self, dt):
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+            f.close()
+
+
+        os.system(f'explorer "{data[0]["downloads_folder"]}"')
+        Menu.downloads.dialog.dismiss()
 
 MainData = None
 
@@ -177,6 +228,10 @@ class Homework(Screen):
     def downloadAttch(self, index):
         Clock.schedule_once(self.popup_open, 0)
 
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+            f.close()
+
         try:
             print(MainData[index]["Attachments"][0])
         except IndexError:
@@ -186,7 +241,7 @@ class Homework(Screen):
         
         for i in range(0, len(MainData[index]["Attachments"])):
             try:
-                mega.download_url(MainData[index]["Attachments"][i])
+                mega.download_url(MainData[index]["Attachments"][i], data[0]["downloads_folder"])
             except:
                 continue
 
@@ -277,7 +332,10 @@ class Notice(Screen):
         
     def downloadAttch(self, index):
         Clock.schedule_once(self.popup_open, 0)
-
+        
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+            f.close()
         try:
             print(MainData[index]["Attachments"][0])
         except IndexError:
@@ -287,7 +345,7 @@ class Notice(Screen):
 
         for i in range(0, len(MainData[index]["Attachments"])):
             try:
-                mega.download_url(MainData[index]["Attachments"][i])
+                mega.download_url(MainData[index]["Attachments"][i], data[0]["downloads_folder"])
             except:
                 continue
 
