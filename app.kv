@@ -1,0 +1,60 @@
+#:kivy 2.1.0
+
+
+
+WindowManager:
+    Menu:
+        name: 'menu'
+    Homework:    
+        name: 'hw'
+    Notice: 
+        name: 'notice'
+
+
+
+<Menu>:
+    Label: 
+        text: 'Main Menu'
+        font_size: 28
+        pos_hint: {'center_x': 0.5, 'center_y':0.7}
+
+    MDFillRoundFlatButton:
+        text: "Notices"
+        font_size: 18
+        size_hint_x: .2
+        pos_hint: {'center_x': 0.5, 'center_y':0.4}
+        on_release: root.notice()
+
+    MDFillRoundFlatButton:
+        text: "Homework"
+        font_size: 18
+        size_hint_x: .2
+        pos_hint: {'center_x': 0.5, 'center_y':0.5}
+        on_release: root.homework()
+
+    Label:
+        text: 'Version 1.0.0'
+        font_size: 16
+        pos_hint: {'center_x': 0.5, 'center_y':0.02}
+
+<Homework>:
+    Label:
+        text: 'Homework'
+        font_size: 28
+        pos_hint: {'center_x': 0.5, 'center_y':0.9}
+
+    MDRectangleFlatButton:
+        text: 'Back'
+        pos_hint: {'center_x': 0.95, 'center_y':0.95}
+        on_release: root.home()
+        
+<Notice>:
+    Label:
+        text: 'Notices'
+        font_size: 28
+        pos_hint: {'center_x': 0.5, 'center_y':0.9}
+
+    MDRectangleFlatButton:
+        text: 'Back'
+        pos_hint: {'center_x': 0.95, 'center_y':0.95}
+        on_release: root.home()
