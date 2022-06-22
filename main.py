@@ -22,6 +22,11 @@ from threading import Thread
 from kivy.clock import Clock
 from tkinter import filedialog
 import tkinter
+from kivy.core.window import Window
+from kivymd.uix.spinner import MDSpinner
+
+Window.size = (1080, 720)
+
 
 mega = Mega()
 mega._login_user('shashankhgedda@gmail.com','Shashankh*12@mydad')
@@ -155,7 +160,8 @@ class Homework(Screen):
 
     root = ScrollView(size_hint=(1, 0.8), effect_cls=ScrollEffect)
     root.add_widget(layout)
- 
+
+        
     def on_enter(self, *args):
         data = client.get_homework()
         global MainData
@@ -189,7 +195,6 @@ class Homework(Screen):
                 
             )
 
-            
             self.layout.add_widget(download_attch)
             self.layout.add_widget(card)
             card.add_widget(notice)
@@ -365,7 +370,7 @@ class WindowManager(ScreenManager):
 
 class TaskAppApp(MDApp):
     def __init__(self, **kwargs):
-        self.title = "Task App"
+        self.title = "Task App - Students"
         super().__init__(**kwargs)
 
     def build(self):
