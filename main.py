@@ -1,3 +1,4 @@
+from tkinter.ttk import Separator
 import kivy
 from kivy.app import App
 from kivy.lang import Builder
@@ -5,6 +6,7 @@ from kivy.uix.screenmanager import *
 from kivymd.app import MDApp
 import os
 from kivymd.uix.card import MDCard
+from kivymd.uix.card import MDSeparator
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
@@ -29,7 +31,7 @@ Window.size = (1080, 720)
 
 
 mega = Mega()
-mega._login_user('shashankhgedda@gmail.com','Shashankh*12@mydad')
+mega._login_user()
 
 kv_string = """
 #:kivy 2.1.0
@@ -168,12 +170,13 @@ class Homework(Screen):
         MainData = data
         
         for i in range(0, len(data)):          
-            notice = Label(text=f"{data[i]['Context']}\n\n[b]Sent by - {data[i]['Teacher']} | {data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']}",
+            notice = Label(text=f"{data[i]['Context']}\n\n[b]Sent by - {data[i]['Teacher']} Mam | {data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']}",
                         markup= True,
                         padding= [15,15],
                         size_hint=(1,None),
                         halign="left", 
                         valign="middle")
+
 
             download_attch = MDRectangleFlatIconButton(
                 text = 'Download Attachment',
@@ -191,7 +194,8 @@ class Homework(Screen):
             card = MDCard(
                 style='elevated',
                 size_hint=(1, None),
-                height=notice.height
+                height=notice.height,
+                orientation = 'vertical'
                 
             )
 
