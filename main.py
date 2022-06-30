@@ -29,7 +29,7 @@ Window.size = (1080, 720)
 
 
 mega = Mega()
-mega._login_user('shashankhgedda@gmail.com','Shashankh*12@mydad')
+mega._login_user()
 
 kv_string = """
 #:kivy 2.1.0
