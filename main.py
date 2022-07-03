@@ -29,6 +29,11 @@ from kivymd.uix.spinner import MDSpinner
 
 Window.size = (1080, 720)
 
+def get_ip():
+    with open('ip.txt') as f:
+        return f.read()
+
+IP = get_ip()
 
 mega = Mega()
 mega._login_user()
