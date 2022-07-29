@@ -1,5 +1,4 @@
-from tkinter.ttk import Separator
-import kivy
+from functools import partial
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import *
@@ -36,7 +35,8 @@ def get_ip():
 IP = get_ip()
 
 mega = Mega()
-mega._login_user()
+mega._login_user('','')
+CLASS = None
 
 kv_string = """
 #:kivy 2.1.0
@@ -49,39 +49,98 @@ WindowManager:
         name: 'hw'
     Notice: 
         name: 'notice'
+    Saved:
+        name: 'saved'
 
 
 <Menu>:
-    Label: 
-        text: 'Main Menu'
-        font_size: 28
-        pos_hint: {'center_x': 0.5, 'center_y':0.7}
-
-    MDFillRoundFlatButton:
-        text: "Notices"
-        font_size: 18
-        size_hint_x: .2
-        pos_hint: {'center_x': 0.5, 'center_y':0.4}
-        on_release: root.notice()
-
-    MDFillRoundFlatButton:
-        text: "Homework"
-        font_size: 18
-        size_hint_x: .2
-        pos_hint: {'center_x': 0.5, 'center_y':0.5}
+    MDCard:
+        size_hint: None,None
+        size: '265dp','150dp'
+        pos_hint: {'center_x': 0.35, 'center_y':0.65}
+        orientation: 'vertical'
+        line_color: 150/255,150/255,150/255,1
+        focus_behavior: True
+        ripple_behavior: True
         on_release: root.homework()
 
-    MDFillRoundFlatButton:
-        text: "Downloads"
-        font_size: 18
-        size_hint_x: .2
-        pos_hint: {'center_x': 0.5, 'center_y':0.3}
-        on_release: root.downloads()
+        
+        Label:
+            text: 'Homework'
+            font_size: '18sp'
 
-    Label:
-        text: 'Version 1.0.0'
-        font_size: 16
-        pos_hint: {'center_x': 0.5, 'center_y':0.02}
+        MDSeparator:
+
+        Label:
+            text: 'Click to view homework/assignments'
+            font_size: '14sp'
+            color: 150/255,150/255,150/255,1
+
+    MDCard:
+        size_hint: None,None
+        size: '265dp','150dp'
+        pos_hint: {'center_x': 0.65, 'center_y':0.65}
+        orientation: 'vertical'
+        line_color: 150/255,150/255,150/255,1
+        focus_behavior: True
+        ripple_behavior: True
+        on_release: root.notice()
+        
+        Label:
+            text: 'Notices'
+            font_size: '18sp'
+
+        MDSeparator:
+
+        Label:
+            text: 'Click to view Notices/Announcements'
+            font_size: '14sp'
+            color: 150/255,150/255,150/255,1
+
+    MDCard:
+        size_hint: None,None
+        size: '265dp','150dp'
+        pos_hint: {'center_x': 0.35, 'center_y':0.35}
+        orientation: 'vertical'
+        line_color: 150/255,150/255,150/255,1
+        focus_behavior: True
+        ripple_behavior: True
+        on_release: root.saved()
+        
+        Label:
+            text: 'Saved'
+            font_size: '18sp'
+
+        MDSeparator:
+
+        Label:
+            text: 'Click to view saved notices and homework'
+            font_size: '14sp'
+            color: 150/255,150/255,150/255,1
+
+    MDCard:
+        size_hint: None,None
+        size: '265dp','150dp'
+        pos_hint: {'center_x': 0.65, 'center_y':0.35}
+        orientation: 'vertical'
+        line_color: 150/255,150/255,150/255,1
+        focus_behavior: True
+        ripple_behavior: True
+        on_release: root.downloads()
+        
+        Label:
+            text: 'Downloads'
+            font_size: '18sp'
+
+        MDSeparator:
+
+        Label:
+            text: 'Click to change or view downloads'
+            font_size: '14sp'
+            color: 150/255,150/255,150/255,1
+
+        
+
 
 <Homework>:
     Label:
@@ -104,16 +163,31 @@ WindowManager:
         text: 'Back'
         pos_hint: {'center_x': 0.95, 'center_y':0.95}
         on_release: root.home()
+
+<Saved>:
+    Label:
+        text: 'Saved'
+        font_size: 28
+        pos_hint: {'center_x': 0.5, 'center_y':0.9}
+
+    MDRectangleFlatButton:
+        text: 'Back'
+        pos_hint: {'center_x': 0.95, 'center_y':0.95}
+        on_release: root.home()
 """
-
-
 
 class Menu(Screen):
     def notice(self):
         TaskAppApp.build.kv.current = 'notice'
+        TaskAppApp.build.kv.transition.direction = 'left'
 
     def homework(self):
         TaskAppApp.build.kv.current = 'hw'
+        TaskAppApp.build.kv.transition.direction = 'left'
+
+    def saved(self):
+        TaskAppApp.build.kv.current = 'saved'
+        TaskAppApp.build.kv.transition.direction = 'left'
 
     def downloads(self):
         Menu.downloads.dialog = MDDialog(
@@ -168,54 +242,69 @@ class Homework(Screen):
     root = ScrollView(size_hint=(1, 0.8), effect_cls=ScrollEffect)
     root.add_widget(layout)
 
-        
     def on_enter(self, *args):
-        data = client.get_homework()
+        try:
+            data = client.get_homework()
+        except ConnectionRefusedError:
+            popup2 = MDDialog(
+                text= "Server offline."
+            )
+            self.home()
+            popup2.open()
+            return
+
         global MainData
         MainData = data
-        
-        for i in range(0, len(data)):          
-            notice = Label(text=f"{data[i]['Context']}\n\n[b]Sent by - {data[i]['Teacher']} Mam | {data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']}",
+
+        for i in range(0, len(data)):  
+            homework = Label(text=f"{data[i]['Context']}\n\nSent by - {data[i]['Teacher']} | [b]{data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']} | Due Date: {data[i]['DueDate']}",
                         markup= True,
                         padding= [15,15],
                         size_hint=(1,None),
                         halign="left", 
                         valign="middle")
 
-
             download_attch = MDRectangleFlatIconButton(
                 text = 'Download Attachment',
                 icon = 'download',
                 pos_hint = {'center_x':0.5},
-                on_release = lambda a:self.download_thread(i)
+                ids = {'b':i}
             )
 
-            download_attch.bind()
+            download_attch.bind(on_release = partial(self.download_thread, i))
 
-            notice.bind(size=notice.setter('text_size')) 
-            notice._label.refresh()
-            notice.height= (notice._label.texture.size[1] + 2*notice.padding[1])
+            save = MDRectangleFlatIconButton(
+                text = 'Save',
+                icon = 'star',
+                pos_hint = {'center_x':0.5},
+                ids = {'b':i}
+            )
+
+            save.bind(on_release = partial(self.save_homework, i))
+
+            homework.bind(size=homework.setter('text_size')) 
+            homework._label.refresh()
+            homework.height= (homework._label.texture.size[1] + 2*homework.padding[1])
 
             card = MDCard(
                 style='elevated',
                 size_hint=(1, None),
-                height=notice.height,
-                orientation = 'vertical'
-                
+                height=homework.height
             )
 
             self.layout.add_widget(download_attch)
+            self.layout.add_widget(save)
             self.layout.add_widget(card)
-            card.add_widget(notice)
+            card.add_widget(homework)
             
 
         try:
             self.add_widget(self.root)
         except:
             print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
- 
-        return super().on_enter(*args)
 
+        return super().on_enter(*args)
+        
     def popup_open(self, dt):
         Homework.popup_open.popup = MDDialog(
             text = "Downloading Attachments. Please Wait.",
@@ -234,7 +323,21 @@ class Homework(Screen):
     def popup_close(self, dt):
         Homework.popup_open.popup.dismiss()
 
-    def download_thread(self, index):
+    def save_homework(self, index, dt):
+        with open('saved_data.json','r') as f:
+            data = json.load(f)
+            f.close()
+
+        new_data = MainData[index]
+
+        data.append(new_data)
+
+        with open('saved_data.json','w') as f:
+            data = json.dump(data, f, indent=4)
+            f.close()
+
+
+    def download_thread(self, index, dt):
         t = Thread(target = Homework.downloadAttch, args=(self,index,))
         t.daemon = True
         t.start()
@@ -261,12 +364,16 @@ class Homework(Screen):
 
         Clock.schedule_once(self.popup_close, 0)
 
+
+
     def home(self):
         for child in [child for child in self.layout.children]:
             self.layout.remove_widget(child)
             
         TaskAppApp.build.kv.current = 'menu'
         TaskAppApp.build.kv.transition.direction = 'right'
+
+
 
 class Notice(Screen):
     layout = StackLayout(size_hint=(1, None),orientation='rl-bt', spacing=20)
@@ -276,12 +383,21 @@ class Notice(Screen):
     root.add_widget(layout)
  
     def on_enter(self, *args):
-        data = client.get_notices()
+        try:
+            data = client.get_notices()
+        except ConnectionRefusedError:
+            popup2 = MDDialog(
+                text= "Server offline."
+            )
+            self.home()
+            popup2.open()
+            return
+
         global MainData
         MainData = data
         
         for i in range(0, len(data)):          
-            notice = Label(text=f"{data[i]['Context']}\n\n[b]Sent by - {data[i]['Teacher']} | {data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']}",
+            notice = Label(text=f"{data[i]['Context']}\n\nSent by - {data[i]['Teacher']} | [b]{data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']} | Due Date: {data[i]['DueDate']}",
                         markup= True,
                         padding= [15,15],
                         size_hint=(1,None),
@@ -290,26 +406,33 @@ class Notice(Screen):
 
             download_attch = MDRectangleFlatIconButton(
                 text = 'Download Attachment',
-                icon = 'download',
-                pos_hint = {'center_x':0.5},
-                on_release = lambda a:self.download_thread(i)
+                icon = 'download'
             )
 
-            download_attch.bind()
+            download_attch.bind(on_release = partial(self.download_thread, i))
+
+            save = MDRectangleFlatIconButton(
+                text = 'Save',
+                icon = 'star',
+                pos_hint = {'center_x':0.5},
+                ids = {'b':i}
+            )
+
+            save.bind(on_release = partial(self.save_notice, i))
 
             notice.bind(size=notice.setter('text_size')) 
             notice._label.refresh()
             notice.height= (notice._label.texture.size[1] + 2*notice.padding[1])
 
             card = MDCard(
-                style='elevated',
-                size_hint=(1, None),
-                height=notice.height
-                
+                height=notice.height,
+                style = 'elevated',
+                size_hint= (1,None),
+                orientation = 'vertical'
             )
 
-            
             self.layout.add_widget(download_attch)
+            self.layout.add_widget(save)
             self.layout.add_widget(card)
             card.add_widget(notice)
             
@@ -365,6 +488,19 @@ class Notice(Screen):
 
         Clock.schedule_once(self.popup_close, 0)
 
+    def save_notice(self, index, dt):
+        with open('saved_data.json','r') as f:
+            data = json.load(f)
+            f.close()
+
+        new_data = MainData[index]
+
+        data.append(new_data)
+
+        with open('saved_data.json','w') as f:
+            data = json.dump(data, f, indent=4)
+            f.close()
+
     def home(self):
         for child in [child for child in self.layout.children]:
             self.layout.remove_widget(child)
@@ -372,12 +508,149 @@ class Notice(Screen):
         TaskAppApp.build.kv.current = 'menu'
         TaskAppApp.build.kv.transition.direction = 'right'
 
+
+class Saved(Screen):
+    layout = StackLayout(size_hint=(1, None),orientation='rl-bt', spacing=20)
+    layout.bind(minimum_height=layout.setter('height'))
+
+    root = ScrollView(size_hint=(1, 0.8), effect_cls=ScrollEffect)
+    root.add_widget(layout)
+ 
+    def on_enter(self, *args):
+        with open('saved_data.json','r') as f:
+            data = json.load(f)
+
+        global MainData
+        MainData = data
+        
+        for i in range(0, len(data)):          
+            notice = Label(text=f"{data[i]['Context']}\n\nSent by - {data[i]['Teacher']} | [b]{data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']} | Due Date: {data[i]['DueDate']}",
+                        markup= True,
+                        padding= [15,15],
+                        size_hint=(1,None),
+                        halign="left", 
+                        valign="middle")
+
+            download_attch = MDRectangleFlatIconButton(
+                text = 'Download Attachment',
+                icon = 'download',
+                pos_hint = {'center_x':0.5},
+                ids = {'b':i}
+            )
+
+            download_attch.bind(on_release = partial(self.download_thread, i))
+
+            notice.bind(size=notice.setter('text_size')) 
+            notice._label.refresh()
+            notice.height= (notice._label.texture.size[1] + 2*notice.padding[1])
+
+            card = MDCard(
+                height=notice.height,
+                style = 'elevated',
+                size_hint= (1,None),
+                orientation = 'vertical'
+            )
+
+            delete = MDRectangleFlatIconButton(
+                text = 'Delete',
+                icon = 'trash-can-outline',
+                pos_hint = {'center_x':0.5},
+                ids = {'b':i}
+            )
+
+            delete.bind(on_release = partial(self.delete, i))
+            
+            self.layout.add_widget(delete)
+            self.layout.add_widget(download_attch)
+            self.layout.add_widget(card)
+            card.add_widget(notice)
+            
+        try:
+            self.add_widget(self.root)
+        except:
+            print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
+ 
+        return super().on_enter(*args)
+
+    def delete(self, index, inst):
+        with open('saved_data.json','r') as f:
+            data = json.load(f)
+            f.close()
+
+        del data[index]
+
+        with open('saved_data.json','w') as f:
+            data = json.dump(data, f, indent=4)
+            f.close()
+
+        for child in [child for child in self.layout.children]:
+            self.layout.remove_widget(child)
+            
+        self.on_enter()
+
+    def popup_open(self, dt):
+        Notice.popup_open.popup = MDDialog(
+            text = "Downloading Attachments. Please Wait.",
+            auto_dismiss=False
+
+        )
+        Notice.popup_open.popup.open()
+
+    def popup_open_inv(self, dt):
+        popup = MDDialog(
+            text = "No Attachments have been assigned to this Notice"
+
+        )
+        popup.open()
+
+    def popup_close(self, dt):
+        Notice.popup_open.popup.dismiss()
+
+    def download_thread(self, index, inst):
+        t = Thread(target = Notice.downloadAttch, args=(self,index,))
+        t.daemon = True
+        t.start()
+        
+    def downloadAttch(self, index):
+        Clock.schedule_once(self.popup_open, 0)
+        
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+            f.close()
+        try:
+            print(MainData[index]["Attachments"][0])
+        except IndexError:
+            Clock.schedule_once(self.popup_close, 0)
+            Clock.schedule_once(self.popup_open_inv, 0)
+            return
+
+        for i in range(0, len(MainData[index]["Attachments"])):
+            try:
+                mega.download_url(MainData[index]["Attachments"][i], data[0]["downloads_folder"])
+            except:
+                continue
+
+        Clock.schedule_once(self.popup_close, 0)
+
+    def home(self):
+        for child in [child for child in self.layout.children]:
+            self.layout.remove_widget(child)
+
+        TaskAppApp.build.kv.current = 'menu'
+        TaskAppApp.build.kv.transition.direction = 'right'
+
+
+
+
+
+
 class WindowManager(ScreenManager):
     pass
 
-
-
 class TaskAppApp(MDApp):
+    num = 0
+    num2 = 0
+
     def __init__(self, **kwargs):
         self.title = "Task App - Students"
         super().__init__(**kwargs)
@@ -385,8 +658,32 @@ class TaskAppApp(MDApp):
     def build(self):
         TaskAppApp.build.kv = Builder.load_string(kv_string)
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Gray"
+        self.theme_cls.primary_palette = "DeepPurple"
         return TaskAppApp.build.kv
+
+    def change_theme(self):
+        opts = ['Red', 'Pink', 'Purple', 'DeepPurple', 'Indigo', 'Blue', 'LightBlue', 'Cyan', 'Teal', 'Green', 'LightGreen', 'Lime', 'Yellow', 'Amber', 'Orange', 'DeepOrange', 'Brown', 'Gray', 'BlueGray']
+        
+        try:
+            self.theme_cls.primary_palette = opts[self.num]
+        except IndexError:
+            self.num = 0
+        print(opts[self.num])
+
+        self.num += 1
+
+    def change_style(self):
+        print(self.num2)
+        opts = ['Light','Dark']
+        try:
+            self.theme_cls.theme_style = opts[self.num2]
+        except IndexError:
+            self.num2 = 0
+
+        self.num2 += 1
+        if self.num2 == 2:
+            self.num2 = 0
+
 
 
 if __name__ == '__main__':
