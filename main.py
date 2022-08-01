@@ -27,6 +27,7 @@ from kivy.core.window import Window
 from kivymd.uix.spinner import MDSpinner
 import socket
 import sys
+import time
 
 Window.size = (1080, 720)
 
@@ -363,6 +364,59 @@ class Homework(Screen):
     root.add_widget(layout)
 
     def on_enter(self, *args):
+        t = Thread(target=self.main, args=(self,))
+        t.daemon = True
+        t.start()
+        return super().on_enter(*args)
+
+    def add_homework(self, data, i, inst):
+        homework = Label(text=f"{data['Context']}\n\nSent by - {data['Teacher']} | [b]{data['Subject']}[/b] | {data['Time']} {data['Date']} | Due Date: {data['DueDate']}",
+                        markup= True,
+                        padding= [15,15],
+                        size_hint=(1,None),
+                        halign="left", 
+                        valign="middle")
+
+        download_attch = MDRectangleFlatIconButton(
+            text = 'Download Attachment',
+            icon = 'download',
+            pos_hint = {'center_x':0.5},
+            ids = {'b':i}
+        )
+
+        download_attch.bind(on_release = partial(self.download_thread, i))
+
+        save = MDRectangleFlatIconButton(
+            text = 'Save',
+            icon = 'star',
+            pos_hint = {'center_x':0.5},
+            ids = {'b':i}
+        )
+
+        save.bind(on_release = partial(self.save_homework, i))
+
+        homework.bind(size=homework.setter('text_size')) 
+        homework._label.refresh()
+        homework.height= (homework._label.texture.size[1] + 2*homework.padding[1])
+
+        card = MDCard(
+            style='elevated',
+            size_hint=(1, None),
+            height=homework.height
+        )
+
+        self.layout.add_widget(download_attch)
+        self.layout.add_widget(save)
+        self.layout.add_widget(card)
+        card.add_widget(homework)
+        
+
+        try:
+            self.add_widget(self.root)
+        except:
+            print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
+
+    def main(self, inst):
         try:
             data = client.get_homework(CLASS)
         except ConnectionRefusedError:
@@ -377,53 +431,10 @@ class Homework(Screen):
         MainData = data
 
         for i in range(0, len(data)):  
-            homework = Label(text=f"{data[i]['Context']}\n\nSent by - {data[i]['Teacher']} | [b]{data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']} | Due Date: {data[i]['DueDate']}",
-                        markup= True,
-                        padding= [15,15],
-                        size_hint=(1,None),
-                        halign="left", 
-                        valign="middle")
+            Clock.schedule_once(partial(self.add_homework, data[i], i))
+            time.sleep(0.1)
 
-            download_attch = MDRectangleFlatIconButton(
-                text = 'Download Attachment',
-                icon = 'download',
-                pos_hint = {'center_x':0.5},
-                ids = {'b':i}
-            )
-
-            download_attch.bind(on_release = partial(self.download_thread, i))
-
-            save = MDRectangleFlatIconButton(
-                text = 'Save',
-                icon = 'star',
-                pos_hint = {'center_x':0.5},
-                ids = {'b':i}
-            )
-
-            save.bind(on_release = partial(self.save_homework, i))
-
-            homework.bind(size=homework.setter('text_size')) 
-            homework._label.refresh()
-            homework.height= (homework._label.texture.size[1] + 2*homework.padding[1])
-
-            card = MDCard(
-                style='elevated',
-                size_hint=(1, None),
-                height=homework.height
-            )
-
-            self.layout.add_widget(download_attch)
-            self.layout.add_widget(save)
-            self.layout.add_widget(card)
-            card.add_widget(homework)
-            
-
-        try:
-            self.add_widget(self.root)
-        except:
-            print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
-
-        return super().on_enter(*args)
+        
         
     def popup_open(self, dt):
         Homework.popup_open.popup = MDDialog(
@@ -503,9 +514,61 @@ class Notice(Screen):
     root.add_widget(layout)
  
     def on_enter(self, *args):
+        t = Thread(target=self.main, args=(self,))
+        t.daemon = True
+        t.start()
+        return super().on_enter(*args)
+
+    def add_notice(self, data, i, inst):
+        notice = Label(text=f"{data['Context']}\n\nSent by - {data['Teacher']} | [b]{data['Subject']}[/b] | {data['Time']} {data['Date']} | Due Date: {data['DueDate']}",
+                        markup= True,
+                        padding= [15,15],
+                        size_hint=(1,None),
+                        halign="left", 
+                        valign="middle")
+
+        download_attch = MDRectangleFlatIconButton(
+            text = 'Download Attachment',
+            icon = 'download',
+            pos_hint = {'center_x':0.5},
+            ids = {'b':i}
+        )
+
+        download_attch.bind(on_release = partial(self.download_thread, i))
+
+        save = MDRectangleFlatIconButton(
+            text = 'Save',
+            icon = 'star',
+            pos_hint = {'center_x':0.5},
+            ids = {'b':i}
+        )
+
+        save.bind(on_release = partial(self.save_notice, i))
+
+        notice.bind(size=notice.setter('text_size')) 
+        notice._label.refresh()
+        notice.height= (notice._label.texture.size[1] + 2*notice.padding[1])
+
+        card = MDCard(
+            style='elevated',
+            size_hint=(1, None),
+            height=notice.height
+        )
+
+        self.layout.add_widget(download_attch)
+        self.layout.add_widget(save)
+        self.layout.add_widget(card)
+        card.add_widget(notice)
+        
+
+        try:
+            self.add_widget(self.root)
+        except:
+            print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
+
+    def main(self, inst):
         try:
             data = client.get_notices(CLASS)
-            print(data)
         except ConnectionRefusedError:
             popup2 = MDDialog(
                 text= "Server offline."
@@ -516,54 +579,12 @@ class Notice(Screen):
 
         global MainData
         MainData = data
+
+        for i in range(0, len(data)):  
+            Clock.schedule_once(partial(self.add_notice, data[i], i))
+            time.sleep(0.1)
+
         
-        for i in range(0, len(data)):          
-            notice = Label(text=f"{data[i]['Context']}\n\nSent by - {data[i]['Teacher']} | [b]{data[i]['Subject']}[/b] | {data[i]['Time']} {data[i]['Date']} | Due Date: {data[i]['DueDate']}",
-                        markup= True,
-                        padding= [15,15],
-                        size_hint=(1,None),
-                        halign="left", 
-                        valign="middle")
-
-            download_attch = MDRectangleFlatIconButton(
-                text = 'Download Attachment',
-                icon = 'download'
-            )
-
-            download_attch.bind(on_release = partial(self.download_thread, i))
-
-            save = MDRectangleFlatIconButton(
-                text = 'Save',
-                icon = 'star',
-                pos_hint = {'center_x':0.5},
-                ids = {'b':i}
-            )
-
-            save.bind(on_release = partial(self.save_notice, i))
-
-            notice.bind(size=notice.setter('text_size')) 
-            notice._label.refresh()
-            notice.height= (notice._label.texture.size[1] + 2*notice.padding[1])
-
-            card = MDCard(
-                height=notice.height,
-                style = 'elevated',
-                size_hint= (1,None),
-                orientation = 'vertical'
-            )
-
-            self.layout.add_widget(download_attch)
-            self.layout.add_widget(save)
-            self.layout.add_widget(card)
-            card.add_widget(notice)
-            
-
-        try:
-            self.add_widget(self.root)
-        except:
-            print("[ERROR] Couldn't add root widget, reason: root widget already exists.")
- 
-        return super().on_enter(*args)
 
     def popup_open(self, dt):
         Notice.popup_open.popup = MDDialog(
