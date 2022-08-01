@@ -25,6 +25,8 @@ from tkinter import filedialog
 import tkinter
 from kivy.core.window import Window
 from kivymd.uix.spinner import MDSpinner
+import socket
+import sys
 
 Window.size = (1080, 720)
 
@@ -38,11 +40,16 @@ mega = Mega()
 mega._login_user('','')
 CLASS = None
 
+
+
+
 kv_string = """
 #:kivy 2.1.0
 #:import toast kivymd.toast.toast
 
-WindowManager:
+WindowManager:    
+    Login:
+        name: 'login'
     Menu:
         name: 'menu'
     Homework:    
@@ -53,7 +60,68 @@ WindowManager:
         name: 'saved'
 
 
+<Login>:
+    MDCard:
+        size_hint: None,None
+        size: ('300dp','400dp')
+        pos_hint: {'center_x':0.5,'center_y':0.5}
+        padding: 25
+        spacing: 15
+        orientation: 'vertical'
+
+        MDLabel:
+            text: "Login"
+            font_size: '22sp'
+            halign: 'center'
+            size_hint_y: None
+            height: self.texture_size[1]
+            padding_y: 25
+        
+        MDTextField:
+            id: Class
+            text: '10-B'
+            hint_text: "Enter Class Name"
+            size_hint_x: None
+            width: '200dp'
+            font_size: '18sp'
+            multiline: False
+            pos_hint: {'center_x':0.5}
+            helper_text: "Invalid Details"
+            helper_text_mode: "on_error"
+
+        MDTextField:
+            id: password
+            text: '729864'
+            hint_text: "Enter Password"
+            size_hint_x: None
+            width: '200dp'
+            font_size: '18sp'
+            multiline: False
+            pos_hint: {'center_x':0.5}
+            helper_text: "Invalid Details"
+            helper_text_mode: "on_error"
+
+        Widget:
+            size_hint_y: None
+            height:'10dp'
+
+        MDRaisedButton:
+            id: login
+            text: "Login"
+            font_size: '18sp'
+            pos_hint: {'center_x':0.5}
+            on_release: root.login()
+
+        Widget:
+            size_hint_y: None
+            height:'10dp'
+
 <Menu>:
+    MDIconButton:
+        icon: 'exit-to-app'
+        pos_hint: {'center_x':0.95,'center_y':0.95}
+        on_release: root.log_out()
+
     MDCard:
         size_hint: None,None
         size: '265dp','150dp'
@@ -176,7 +244,57 @@ WindowManager:
         on_release: root.home()
 """
 
+class Login(Screen):
+    def login(self):        
+        Class = self.ids.Class.text
+        password = self.ids.password.text
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((IP,2345))
+
+        s.send(bytes('CLASS_LOGIN','utf-8'))
+        
+        cred = s.recv(10000)
+        cred = cred.decode('utf-8')
+
+        cred = json.loads(cred)
+        
+        index = None
+        for i in range(0,len(cred)):
+            
+            cls = cred[i]["Class"]
+            passw = cred[i]["Password"]
+
+            if cls == Class and passw == password:
+                self.ids.Class.error = False
+                self.ids.password.error = False
+
+                s.send(bytes('SUCCESS','utf-8'))
+
+                global CLASS
+                CLASS = Class
+                index = 1
+
+                self.ids.Class.text = ''
+                self.ids.password.text = ''
+                TaskAppApp.build.kv.current = 'menu'
+                TaskAppApp.build.kv.transition.direction = 'left'
+
+                
+
+        if index == None:
+            self.ids.Class.error = True
+            self.ids.password.error = True
+
+
 class Menu(Screen):
+    def log_out(self):
+        global CLASS
+        CLASS = None
+
+        TaskAppApp.build.kv.current = 'login'
+        TaskAppApp.build.kv.transition.direction = 'right'
+
     def notice(self):
         TaskAppApp.build.kv.current = 'notice'
         TaskAppApp.build.kv.transition.direction = 'left'
@@ -233,6 +351,8 @@ class Menu(Screen):
         os.system(f'explorer "{data[0]["downloads_folder"]}"')
         Menu.downloads.dialog.dismiss()
 
+
+
 MainData = None
 
 class Homework(Screen):
@@ -244,7 +364,7 @@ class Homework(Screen):
 
     def on_enter(self, *args):
         try:
-            data = client.get_homework()
+            data = client.get_homework(CLASS)
         except ConnectionRefusedError:
             popup2 = MDDialog(
                 text= "Server offline."
@@ -384,7 +504,8 @@ class Notice(Screen):
  
     def on_enter(self, *args):
         try:
-            data = client.get_notices()
+            data = client.get_notices(CLASS)
+            print(data)
         except ConnectionRefusedError:
             popup2 = MDDialog(
                 text= "Server offline."
@@ -462,7 +583,7 @@ class Notice(Screen):
     def popup_close(self, dt):
         Notice.popup_open.popup.dismiss()
 
-    def download_thread(self, index):
+    def download_thread(self, index, inst):
         t = Thread(target = Notice.downloadAttch, args=(self,index,))
         t.daemon = True
         t.start()
@@ -658,7 +779,7 @@ class TaskAppApp(MDApp):
     def build(self):
         TaskAppApp.build.kv = Builder.load_string(kv_string)
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "DeepPurple"
+        self.theme_cls.primary_palette = "Gray"
         return TaskAppApp.build.kv
 
     def change_theme(self):
