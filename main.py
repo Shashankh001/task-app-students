@@ -28,6 +28,8 @@ from kivymd.uix.spinner import MDSpinner
 import socket
 import sys
 import time
+from pathlib import Path
+
 
 Window.size = (1080, 720)
 
@@ -289,6 +291,21 @@ class Login(Screen):
 
 
 class Menu(Screen):
+    def on_enter(self, *args):
+        with open('appinfo.json','r') as f:
+            data = json.load(f)
+
+        if data[0]['downloads_folder'] == '':
+            destination = str(Path.home() / "Downloads")
+            data[0]['downloads_folder'] = destination
+
+            with open('appinfo.json','w') as f:
+                json.dump(data, f, indent=4)
+        
+        else:
+            pass
+
+        return super().on_enter(*args)
     def log_out(self):
         global CLASS
         CLASS = None
