@@ -1,1 +1,11 @@
-[]
+[
+    {
+        "Teacher": "Juliana",
+        "Subject": "Maths",
+        "Time": "07:32 PM",
+        "Date": "2022-08-02",
+        "DueDate": "2022-08-25",
+        "Attachments": [],
+        "Context": "no file test"
+    }
+]

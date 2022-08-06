@@ -1,9 +1,9 @@
 from functools import partial
-from kivy.app import App
+import os
+os.environ['KIVY_IMAGE'] = 'pil'
 from kivy.lang import Builder
 from kivy.uix.screenmanager import *
 from kivymd.app import MDApp
-import os
 from kivymd.uix.card import MDCard
 from kivymd.uix.card import MDSeparator
 from kivy.uix.boxlayout import BoxLayout
@@ -29,7 +29,7 @@ import socket
 import sys
 import time
 from pathlib import Path
-
+import kivy
 
 Window.size = (1080, 720)
 
@@ -40,7 +40,7 @@ def get_ip():
 IP = get_ip()
 
 mega = Mega()
-mega._login_user('','')
+mega._login_user('shashankhgedda@gmail.com','MEGA12345@54321')
 CLASS = None
 
 
@@ -48,7 +48,6 @@ CLASS = None
 
 kv_string = """
 #:kivy 2.1.0
-#:import toast kivymd.toast.toast
 
 WindowManager:    
     Login:
@@ -82,7 +81,7 @@ WindowManager:
         
         MDTextField:
             id: Class
-            text: '10-B'
+            text: ''
             hint_text: "Enter Class Name"
             size_hint_x: None
             width: '200dp'
@@ -94,7 +93,7 @@ WindowManager:
 
         MDTextField:
             id: password
-            text: '729864'
+            text: ''
             hint_text: "Enter Password"
             size_hint_x: None
             width: '200dp'
@@ -298,7 +297,6 @@ class Menu(Screen):
         if data[0]['downloads_folder'] == '':
             destination = str(Path.home() / "Downloads")
             data[0]['downloads_folder'] = destination
-
             with open('appinfo.json','w') as f:
                 json.dump(data, f, indent=4)
         
@@ -306,6 +304,7 @@ class Menu(Screen):
             pass
 
         return super().on_enter(*args)
+
     def log_out(self):
         global CLASS
         CLASS = None
@@ -347,6 +346,9 @@ class Menu(Screen):
         root.withdraw()
 
         destination = filedialog.askdirectory(parent=root,initialdir="/",title='Please select a directory')
+        
+        if destination == '':
+            destination = destination = str(Path.home() / "Downloads")
 
         with open('appinfo.json','r') as f:
             data = json.load(f)
@@ -844,6 +846,14 @@ class TaskAppApp(MDApp):
             self.num2 = 0
 
 
+def resourcePath():
+    '''Returns path containing content - either locally or in pyinstaller tmp file'''
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS)
+
+    return os.path.join(os.path.abspath("."))
+
 
 if __name__ == '__main__':
+    kivy.resources.resource_add_path(resourcePath())
     TaskAppApp().run()
